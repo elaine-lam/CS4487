@@ -1,0 +1,4 @@
+AIGC-Detection-Dataset/train/0_real/*.jpg
+AIGC-Detection-Dataset/train/1_fake/*.jpg
+AIGC-Detection-Dataset/val/0_real/*.jpg
+AIGC-Detection-Dataset/val/1_fake/*.jpg
