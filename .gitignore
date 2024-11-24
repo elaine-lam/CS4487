@@ -1,3 +1,5 @@
 /.venv
 /AIGC-Detection-Dataset
 AIGC-Detection-Dataset.zip
+/nn/data
+/nn/nn
