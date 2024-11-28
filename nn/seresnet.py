@@ -20,8 +20,21 @@ from PIL import Image, ImageChops, ImageEnhance
 from skimage import feature
 import os
 import csv
+import logging
+import datetime
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+# Setup logging
+log_dir = 'log'
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
+current_datetime = datetime.datetime.now()
+current_datetime_str = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
+log_file_path = os.path.join(log_dir, f"app_{current_datetime_str}.log")
+logging.basicConfig(filename=log_file_path, level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 def extract_texture_features(image):
     gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
@@ -104,7 +117,9 @@ class ZipImageFolderDataset(datasets.ImageFolder):
         
         # Ensure the image is now a tensor
         if not isinstance(img_tensor, torch.Tensor):
-            raise TypeError(f"Expected image to be a tensor, but got {type(img_tensor)}.")
+            msg = f"Expected image to be a tensor, but got {type(img_tensor)}."
+            logging.critical(msg)
+            raise TypeError(msg)
         
         # Convert tensor to numpy array for feature extraction
         img_np = img_tensor.numpy().transpose(1, 2, 0)
@@ -148,7 +163,9 @@ class ImageFolderDataset(datasets.ImageFolder):
         
         # Ensure the image is now a tensor
         if not isinstance(img_tensor, torch.Tensor):
-            raise TypeError(f"Expected image to be a tensor, but got {type(img_tensor)}.")
+            msg = f"Expected image to be a tensor, but got {type(img_tensor)}."
+            logging.critical(msg)
+            raise TypeError(msg)
         
         # Convert tensor to numpy array for feature extraction
         img_np = img_tensor.numpy().transpose(1, 2, 0)
@@ -174,7 +191,6 @@ def get_image_paths(roots):
     return img_paths
 
 imgs = get_image_paths(r'..\AIGC-Detection-Dataset')
-# print(imgs)
 
 def load_data(zip_path, batch_size, image_size):
     transform = transforms.Compose([
@@ -190,13 +206,13 @@ def load_data(zip_path, batch_size, image_size):
     train_dataset = ZipImageFolderDataset(zip_path, train_dir, transform=transform)
     val_dataset = ZipImageFolderDataset(zip_path, val_dir, transform=transform)
     # test_dataset = ZipImageFolderDataset(zip_path, test_dir, transform=transform)
-    print(f"Data prepared:\nTrain: {len(train_dataset)}, Val: {len(val_dataset)}")
+    logging.info(f"Data prepared:\nTrain: {len(train_dataset)}, Val: {len(val_dataset)}")
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, drop_last=True)
     # test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, drop_last=True)
     
-    print("Data loaded")
+    logging.info("Data loaded")
     return train_loader, val_loader
 
 def evaluate(model, test_loader):
@@ -207,7 +223,7 @@ def evaluate(model, test_loader):
     y_pred = []
     
     batch = 0
-    print(f"Total batches: {len(test_loader)}")
+    logging.info(f"Total batches: {len(test_loader)}")
     for img, label in test_loader:
         # Please make sure that the "pred" is binary result
         output = model(img.to(DEVICE))
@@ -216,14 +232,14 @@ def evaluate(model, test_loader):
         y_true.extend(label.numpy())
         y_pred.extend(pred)
         
-        print(f"Batch: {batch} completed")
+        logging.info(f"Batch: {batch} completed")
         batch += 1
 
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
 
     accuracy = metrics.accuracy_score(y_true, y_pred)
-    print(f'Validation Accuracy: {accuracy}')
+    logging.info(f'Validation Accuracy: {accuracy}')
     return accuracy
 
 def train_model(model, train_loader, val_loader, optimizer, criterion, epochs):
@@ -236,8 +252,8 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, epochs):
     val_accuracies = []
     for epoch in range(epochs):
         running_loss = 0
-        print(f"Epoch {epoch+1} started...")
-        print(f"length of train_loader: {len(train_loader)}")
+        logging.info(f"Epoch {epoch+1} started...")
+        logging.info(f"length of train_loader: {len(train_loader)}")
         start_time = time.time()
         
         batch = 1
@@ -254,10 +270,10 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, epochs):
             optimizer.step()
 
             running_loss += loss.item() * features.size(0)
-            print(f'Batch {batch} completed...')
+            logging.info(f'Batch {batch} completed...')
             batch += 1
         epoch_loss = running_loss / len(train_loader.dataset)
-        print(f'Epoch {epoch+1}/{epochs}, Loss: {epoch_loss:.4f}, Time: {time.time()-start_time:.2f}s')
+        logging.info(f'Epoch {epoch+1}/{epochs}, Loss: {epoch_loss:.4f}, Time: {time.time()-start_time:.2f}s')
         train_losses.append(epoch_loss)
         
         val_loss, val_accuracy = validate_model(model, val_loader, criterion)
@@ -273,14 +289,14 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, epochs):
         val_accuracies.append(val_accuracy)
         
         if epochs_without_improvement >= patience:
-            print(f"Early stopping at epoch {epoch + 1} due to no improvement in validation loss.")
+            logging.info(f"Early stopping at epoch {epoch + 1} due to no improvement in validation loss.")
             break
     return train_losses, val_losses, val_accuracies
         
 
 def save_model(model, path='testing.pth'):
     torch.save(model.state_dict(), path)
-    print("Model saved successfully!")
+    logging.info("Model saved successfully!")
 
 def save_results(train_losses, val_losses, val_accuracies, path='results.csv'):
     with open(path, 'w', newline='') as file:
@@ -330,12 +346,12 @@ def get_model(filename='seresnext_finetuned.pth', force_new=False):
     if os.path.exists(file_path) and not force_new:
         model = create_custom_model(pretrained=False)
         model.load_state_dict(torch.load(file_path, map_location=DEVICE, weights_only=True))
-        print("Model loaded successfully!")
+        logging.info("Model loaded successfully!")
         return model
     
     else:   # Create a new model
         model = create_custom_model(pretrained=True)
-        print("Creating a new model")
+        logging.info("Creating a new model")
         return model
     
 # Start Training
