@@ -160,6 +160,7 @@ class ImageFolderDataset(datasets.ImageFolder):
     def __getitem__(self, index):
         img_path, label = self.img_paths[index]
         img = Image.open(img_path)
+        img = img.convert("RGB")
         if self.transform:
             img_tensor = self.transform(img)
         
@@ -192,12 +193,12 @@ def load_data(zip_path, batch_size, image_size):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
     
-    train_dir = "AIGC-Detection-Dataset/train"
-    val_dir = "AIGC-Detection-Dataset/val"
+    train_dir = r"AIGC-Detection-Dataset\train"
+    val_dir = r"AIGC-Detection-Dataset\val"
     # test_dir = "AIGC-Detection-Dataset/val"
 
-    train_dataset = ZipImageFolderDataset(zip_path, train_dir, transform=transform)
-    val_dataset = ZipImageFolderDataset(zip_path, val_dir, transform=transform)
+    train_dataset = ImageFolderDataset(zip_path, train_dir, transform=transform)
+    val_dataset = ImageFolderDataset(zip_path, val_dir, transform=transform)
     # test_dataset = ZipImageFolderDataset(zip_path, test_dir, transform=transform)
     logging.info(f"Data prepared:\nTrain: {len(train_dataset)}, Val: {len(val_dataset)}")
 
@@ -355,7 +356,7 @@ if __name__ == '__main__':
     model = model.to(DEVICE)
     
     # Load the data
-    zip_path = 'AIGC-Detection-Dataset.zip'
+    zip_path = 'AIGC-Detection-Datasetp'
     batch_size = 64
     image_size = 224
     train_loader, val_loader = load_data(zip_path, batch_size, image_size)

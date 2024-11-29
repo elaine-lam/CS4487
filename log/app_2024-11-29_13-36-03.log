@@ -1,0 +1,11 @@
+2024-11-29 13:36:03,617 - INFO - Loading pretrained weights from Hugging Face hub (timm/seresnext101_32x4d.gluon_in1k)
+2024-11-29 13:36:03,617 - DEBUG - Starting new HTTPS connection (1): huggingface.co:443
+2024-11-29 13:36:04,023 - DEBUG - https://huggingface.co:443 "HEAD /timm/seresnext101_32x4d.gluon_in1k/resolve/main/model.safetensors HTTP/1.1" 302 0
+2024-11-29 13:36:04,038 - INFO - [timm/seresnext101_32x4d.gluon_in1k] Safe alternative available for 'pytorch_model.bin' (as 'model.safetensors'). Loading weights using safetensors.
+2024-11-29 13:36:04,133 - INFO - Creating a new model
+2024-11-29 13:38:34,842 - INFO - Data prepared:
+Train: 45000, Val: 5000
+2024-11-29 13:38:34,842 - INFO - Data loaded
+2024-11-29 13:38:34,842 - INFO - Epoch 1 started...
+2024-11-29 13:38:34,842 - INFO - length of train_loader: 2812
+2024-11-29 13:39:09,188 - INFO - Batch 1 completed...
