@@ -23,7 +23,6 @@ import csv
 import logging
 import datetime
 
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Setup logging
 log_dir = 'log'
@@ -128,6 +127,8 @@ class ZipImageFolderDataset(datasets.ImageFolder):
         texture_features = extract_texture_features(img_np)
         color_features = extract_color_features(img)
         shape_features = extract_shape_features(img_np)
+
+        img.close()
         
         features = np.stack([texture_features, color_features, shape_features], axis=0)
         features = torch.tensor(features).float().permute(1, 2, 0)  # Change the shape to [height, width, channels]
@@ -136,16 +137,17 @@ class ZipImageFolderDataset(datasets.ImageFolder):
         return features, label
     
 class ImageFolderDataset(datasets.ImageFolder):
-    def __init__(self, zip_path, root, transform=None):
-        self.zip_path = zip_path
+    def __init__(self, img_path, root, transform=None):
+        self.img_path = img_path
         self.root = root
         self.transform = transform
         self.classes = ['0_real', '1_fake']
         self.img_paths = self._get_image_paths()
 
-    def _get_image_paths(roots):
+    def _get_image_paths(self):
         img_paths = []
-        for root, dirs, files in os.walk(roots):
+        root_path = os.path.join(self.img_path, self.root)
+        for root, dirs, files in os.walk(root_path):
             for name in files:
                 if fnmatch.fnmatch(name, "*.jpg"):
                     label = 0 if '0_real' in root else 1
@@ -174,6 +176,8 @@ class ImageFolderDataset(datasets.ImageFolder):
         texture_features = extract_texture_features(img_np)
         color_features = extract_color_features(img)
         shape_features = extract_shape_features(img_np)
+
+        img.close()
         
         features = np.stack([texture_features, color_features, shape_features], axis=0)
         features = torch.tensor(features).float().permute(1, 2, 0)  # Change the shape to [height, width, channels]
@@ -181,17 +185,6 @@ class ImageFolderDataset(datasets.ImageFolder):
         
         return features, label
     
-def get_image_paths(roots):
-    img_paths = []
-    for root, dirs, files in os.walk(roots):
-        for name in files:
-            if fnmatch.fnmatch(name, "*.jpg"):
-                label = 0 if '0_real' in root else 1
-                img_paths.append((os.path.join(root, name), label))
-    return img_paths
-
-imgs = get_image_paths(r'..\AIGC-Detection-Dataset')
-
 def load_data(zip_path, batch_size, image_size):
     transform = transforms.Compose([
         transforms.Resize((image_size, image_size)),
@@ -245,7 +238,7 @@ def evaluate(model, test_loader):
 def train_model(model, train_loader, val_loader, optimizer, criterion, epochs):
     model.train()
     best_val_loss = float('inf')
-    patience = 3
+    patience = 5
     epochs_without_improvement = 0
     train_losses = []
     val_losses = []
@@ -353,28 +346,29 @@ def get_model(filename='seresnext_finetuned.pth', force_new=False):
         model = create_custom_model(pretrained=True)
         logging.info("Creating a new model")
         return model
+
+if __name__ == '__main__':
+    # Start Training
+    model_weight_filename = 'seresnext_finetuned.pth'
     
-# Start Training
-model_weight_filename = 'seresnext_finetuned.pth'
-
-model = get_model(model_weight_filename, force_new=False)
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-model = model.to(DEVICE)
-
-# Load the data
-zip_path = '..\AIGC-Detection-Dataset.zip'
-batch_size = 64
-image_size = 224
-train_loader, val_loader = load_data(zip_path, batch_size, image_size)
-
-criterion = nn.CrossEntropyLoss().to(DEVICE)
-optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-
-train_losses, val_losses, val_accuracies = train_model(model, train_loader, val_loader, optimizer, criterion, 5)
-
-# Save the results to a CSV file
-save_results(train_losses, val_losses, val_accuracies)
-
-save_model(model, model_weight_filename)
-# evaluate(model, train_loader)
-# evaluate(model, val_loader)
+    model = get_model(model_weight_filename, force_new=False)
+    DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = model.to(DEVICE)
+    
+    # Load the data
+    zip_path = '..\AIGC-Detection-Dataset.zip'
+    batch_size = 64
+    image_size = 224
+    train_loader, val_loader = load_data(zip_path, batch_size, image_size)
+    
+    criterion = nn.CrossEntropyLoss().to(DEVICE)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    
+    train_losses, val_losses, val_accuracies = train_model(model, train_loader, val_loader, optimizer, criterion, 50)
+    
+    # Save the results to a CSV file
+    save_results(train_losses, val_losses, val_accuracies)
+    
+    save_model(model, model_weight_filename)
+    # evaluate(model, train_loader)
+    # evaluate(model, val_loader)
