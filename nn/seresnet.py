@@ -356,7 +356,7 @@ if __name__ == '__main__':
     model = model.to(DEVICE)
     
     # Load the data
-    zip_path = 'AIGC-Detection-Datasetp'
+    zip_path = 'AIGC-Detection-Dataset'
     batch_size = 64
     image_size = 224
     train_loader, val_loader = load_data(zip_path, batch_size, image_size)
