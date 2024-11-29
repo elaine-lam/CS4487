@@ -47,11 +47,15 @@ def extract_texture_features(image):
     return lbp
 
 def extract_color_features(image, quality=95, enhance_factor=10):
-    temp_path = "temp_recompressed.jpg"
-    image.save(temp_path, format="JPEG", quality=quality)
-    with Image.open(temp_path) as recompressed:
-        ela_image = ImageChops.difference(image, recompressed)
-    os.remove(temp_path)
+    # temp_path = "temp_recompressed.jpg"
+    # image.save(temp_path, format="JPEG", quality=quality)
+    # with Image.open(temp_path) as recompressed:
+    #     ela_image = ImageChops.difference(image, recompressed)
+    # os.remove(temp_path)
+    
+    image_bytes = image.tobytes()
+    recompressed = Image.frombytes("RGB", image.size, image_bytes)
+    ela_image = ImageChops.difference(image, recompressed)
 
     enhancer = ImageEnhance.Brightness(ela_image)
     enhanced_ela = enhancer.enhance(enhance_factor)
@@ -251,26 +255,28 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, epochs):
         start_time = time.time()
         
         batch = 1
-        for features, labels in train_loader:
-            # images = images.to(DEVICE)
-            labels = labels.to(DEVICE)
-            features = features.to(DEVICE)
+        # for features, labels in train_loader:
+        #     # images = images.to(DEVICE)
+        #     labels = labels.to(DEVICE)
+        #     features = features.to(DEVICE)
 
-            optimizer.zero_grad()
-            outputs = model(features)
+        #     optimizer.zero_grad()
+        #     outputs = model(features)
             
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
+        #     loss = criterion(outputs, labels)
+        #     loss.backward()
+        #     optimizer.step()
 
-            running_loss += loss.item() * features.size(0)
-            logging.info(f'Batch {batch} completed...')
-            batch += 1
+        #     running_loss += loss.item() * features.size(0)
+        #     logging.info(f'Batch {batch} completed, loss = {loss:.4f}')
+        #     batch += 1
+        
         epoch_loss = running_loss / len(train_loader.dataset)
         logging.info(f'Epoch {epoch+1}/{epochs}, Loss: {epoch_loss:.4f}, Time: {time.time()-start_time:.2f}s')
         train_losses.append(epoch_loss)
         
         val_loss, val_accuracy = validate_model(model, val_loader, criterion)
+        logging.info(f'Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_accuracy:.4f}')
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             epochs_without_improvement = 0
@@ -303,14 +309,18 @@ def validate_model(model, val_loader, criterion):
     val_loss = 0
     correct = 0
     total = 0
+    
+    logging.info(f"length of val_loader: {len(val_loader)}")
+    batch = 1
     with torch.no_grad():
         for images, labels in val_loader:
-            images, labels = images.to(DEVICE), labels.to(DEVICE).float().unsqueeze(1)
+            images, labels = images.to(DEVICE), labels.to(DEVICE)
             outputs = model(images)
             val_loss += criterion(outputs, labels).item()
-            predicted = (outputs > 0.5).int()
+            predicted = torch.argmax(outputs, dim=1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
+            batch += 1
     val_loss /= len(val_loader)
     accuracy = correct / len(val_loader.dataset)
     return val_loss, accuracy
@@ -357,12 +367,12 @@ if __name__ == '__main__':
     
     # Load the data
     zip_path = 'AIGC-Detection-Dataset'
-    batch_size = 64
+    batch_size = 32
     image_size = 224
     train_loader, val_loader = load_data(zip_path, batch_size, image_size)
     
     criterion = nn.CrossEntropyLoss().to(DEVICE)
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     
     train_losses, val_losses, val_accuracies = train_model(model, train_loader, val_loader, optimizer, criterion, 50)
     
