@@ -273,8 +273,7 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, epochs):
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             epochs_without_improvement = 0
-            # Save the best model weights (optional)
-            save_model(model)
+            save_model(model, f'seresnent_e{epoch+1}.pth')
         else:
             epochs_without_improvement += 1
             
@@ -356,7 +355,7 @@ if __name__ == '__main__':
     model = model.to(DEVICE)
     
     # Load the data
-    zip_path = '..\AIGC-Detection-Dataset.zip'
+    zip_path = 'AIGC-Detection-Dataset.zip'
     batch_size = 64
     image_size = 224
     train_loader, val_loader = load_data(zip_path, batch_size, image_size)
