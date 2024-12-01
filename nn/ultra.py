@@ -8,3 +8,4 @@ if __name__ == "__main__":
     results = model.train(data="AIGC-Detection-Dataset\AIGC-Detection-Dataset", epochs=50, imgsz=224)
 
     model.save("fine.pt")  # save the model to file
+    model._save_to_state_dict("fine_state_dict.pt")  # save the model to state_dict
