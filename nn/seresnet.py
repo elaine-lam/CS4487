@@ -42,7 +42,7 @@ def extract_texture_features(image):
     n_points = 8 * radius
     lbp = feature.local_binary_pattern(gray_image, n_points, radius, method='uniform')
 
-    lbp = lbp / lbp.max()  # Normalize the LBP values to the range [0, 1]
+    # lbp = lbp / lbp.max()  # Normalize the LBP values to the range [0, 1]
     
     return lbp
 
@@ -61,7 +61,7 @@ def extract_color_features(image, quality=95, enhance_factor=10):
     enhanced_ela = enhancer.enhance(enhance_factor)
 
     resized_ela = enhanced_ela.resize((224, 224)).convert("L")
-    feature_array = np.array(resized_ela).astype(np.float32) / 255.0
+    feature_array = np.array(resized_ela).astype(np.float32) #/ 255.0
     return feature_array
 
 
@@ -185,8 +185,8 @@ class ImageFolderDataset(datasets.ImageFolder):
         img.close()
         
         features = np.stack([texture_features, color_features, shape_features], axis=0)
-        features = torch.tensor(features).float().permute(1, 2, 0)  # Change the shape to [height, width, channels]
-        features = features.permute(2, 0, 1)  # Change the shape to [channels, height, width]
+        features = torch.tensor(features).float()
+        print(features.shape)
         
         return features, label
     
@@ -194,7 +194,7 @@ def load_data(zip_path, batch_size, image_size):
     transform = transforms.Compose([
         transforms.Resize((image_size, image_size)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
     
     train_dir = r"AIGC-Detection-Dataset\train"
@@ -367,7 +367,7 @@ if __name__ == '__main__':
     
     # Load the data
     zip_path = 'AIGC-Detection-Dataset'
-    batch_size = 32
+    batch_size = 1
     image_size = 224
     train_loader, val_loader = load_data(zip_path, batch_size, image_size)
     
