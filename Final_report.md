@@ -12,7 +12,9 @@
     1.1 [Error Level Analysis](#error-level-analysis-ela) <br>
     1.2 [Morphological Filter](#morphological-filter-mf) <br>
     1.3 [Local Binary Pattern](#local-binary-pattern) <br>
-2. [Data Loader](#data-loader)
+2. [Data Loader](#data-loader) <br>
+    2.1 [Data Loading](#data-loading) <br>
+    2.2 [Data Sampling](#data-sampling) <br>
 3. [Model](#model)
 
 ## Feature Extraction
@@ -56,3 +58,13 @@ We have decided to use the extracted image folder instead of using the zip folde
 Not all of the data loaded is mixed together to be delivered to the network for training and validation. The training dataset is extracted and split into batches, randomising the order of the data with shuffling and then put into the network for training. The shuffling is done randomly and differently for each epoch, so the training data is different for each iteration of the training process. It gives the much-needed variety for the training data, allowing the network to have a more comprehensive view of the data. However, for the validation dataset, it is a drastically different story. For the validation dataset, we purposefully did not add random shuffling after each epoch. This is because the validating data has to be evaluated fairly between each epoch. Therefore, it is paramount that it stays the same to provide a static and unbiased view of the performance of the current epoch.
 
 ## Model
+### SE-ResNeXt Model
+SE-ResNeXt is a neural network combining ResNext, Squeeze-and-Excitation blocks and the principle of cardinality for performing dynamic channel-wise feature recalibration. ResNeXt repeats building blocks that aggregate many transformations. 
+
+To achieve the goal of enhancing the representational power of the network, a parameter "cardinality" is implemented to control the paths through the network. Cardinality refers to the amount of parallel pathways within any given building block in the network. Through increasing the cardinality, it greatly improves the model's ability to capture a plethora of features without significantly increasing the number of parameters, allowing the network to better grasp the convoluted connections between features. It is achieved by enabling different paths that focus on various aspects of the input data. The increased cardinality effectively utilises the computation capacity to capture a broader range of features to ultimately enhance its representational power, leading to improved performance in sophisticated relationship mapping between features and labels. The implementation of the cardinality principle distinctly separates and distinguishes SE-ResNeXt from traditional ResNet networks.
+
+ResNeXt is a neural network architecture extended from ResNet that introduces a new block structure. It puts a strong emphasis on parallelising the model to improve the scalability of the model. The improved scalability allows for more efficient use of computational power, increasing the performance of the model. The ResNeXt network consists of many blocks, where each block is comprised of a sequence of convolutional layers and ends after batch normalisation and the ReLU activation function is applied. For each of the blocks, the input data is separated into multiple channels based on the aforementioned cardinality parameter. The outputs are condensed before passing to the next block.
+
+For Squeeze-and-Excitation block, it is a neural network component designed to provide a more comprehensive view of the features, thereby increasing the representational power of the network. It achieves a comprehensive view through adaptive recalibration of the feature maps. The "Squeeze" operation typically uses global average pooling to greatly reduce the spatial dimensionality of the feature maps to a 1x1 matrix. On the other hand, the "Excitation" operation learns a channel-wise/feature-wise weighting that encapsulates the significance of each of the given feature channels. The channel-wise weights are learnt through a smaller neural network. The Squeeze-and-Excitation block incorporates both the squeeze and excitation operations. The input feature maps are passed through the squeeze operation to obtain a channel-wise descriptor of the features. Then, it is passed through the excitation mechanism to learn to the forenamed channel-wise weightings to scale the feature maps accordingly.
+
+SE-ResNeXt combines the three factors mentioned above to achieve a higher accuracy in image classification tasks. The SE blocks improves feature selection while allowing us to train our model with separated channels for various feature extraction methods.
