@@ -4,7 +4,12 @@
 
 **Date:** 6-Dec-2024
 
-## Abstract
+## Introduction
+AI-generated content has been on the rise in both its popularity and its efficacy to deceive by false resemblance. Due to the rapid advancement in AI generation techniques, it has become harder and harder to differentiate between photorealistic and AI-created images. Our project aims to tackle this with our own implementation of an AI-Generated Content Detector. 
+
+To further explain our ideas beyond basic code reading and explanation, we strive to provide a comprehensive view of our detector design and implementation, as well as, most importantly, the underlying reason for selecting such a design. The following report will delve into the importance of proper feature extraction in a well-designed network for achieving specific tasks. The report will explore our selection of feature extraction techniques and their respective crucial roles in filtering noise to ensure the fidelity of the images. Data loaders will also be discussed for their importance in effectively sampling data batches for training and validation. Our neural network model will also be introduced and thoroughly explained in the later sections. The report will also includes testing results from both our own test cases and official test results given back from TAs.
+
+By the end of the report, readers will gain a more comprehensive understanding of the methodologies and technologies implemented in our design.
 
 ## Table of Contents
 
